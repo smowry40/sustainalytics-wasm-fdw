@@ -1,33 +1,66 @@
-# Postgres Wasm FDW [Template]
+# Sustainalytics WASM FDW (Supabase Wrappers)
 
-This project demostrates how to create a Postgres Foreign Data Wrapper with Wasm, using the [Wrappers framework](https://github.com/supabase/wrappers).
+This project is a Supabase **WASM Foreign Data Wrapper (FDW)** that wraps the Sustainalytics API:
+- `POST /auth/token` to get a bearer token
+- `GET /v2/DataService` (exposed as `endpoint='DataServices'`) with pagination using `Skip` + `Take`
+- `GET /v2/FieldMappingDefinitions` (exposed as `endpoint='FieldMappingDefinitions'`) flattened into rows
 
-This example reads the [realtime GitHub events](https://api.github.com/events) into a Postgres database. 
+## Supported foreign table options
 
-## Project Structure
+### DataServices
+Table options (case-sensitive):
+- `endpoint = 'DataServices'` (**required**)
+- `ProductId` (**required**)
+- `PackageIds` (optional, comma-separated)
+- `FieldClusterIds` (optional, comma-separated)
+- `FieldIds` (optional, comma-separated)
+- `Take` (optional) — defaults to 10, and clamps to <= 10 (or uses <10 if provided, per your requested rule)
+
+Notes:
+- `Skip` is managed internally by the FDW, starting at 0 and increasing by `Take`.
+
+Columns for DataServices tables:
+- `entityId text`
+- `entityName text`
+- `fields jsonb`
+
+### FieldMappingDefinitions
+Table options:
+- `endpoint = 'FieldMappingDefinitions'` (**required**)
+
+Columns (flattened):
+- `product_id text`
+- `product_name text`
+- `package_id bigint`
+- `package_name text`
+- `field_cluster_id bigint`
+- `field_cluster_name text`
+- `field_id bigint`
+- `field_name text`
+- `description text`
+- `field_type text`
+- `field_length text`
+- `possible_values text`
+- `grouping text`
+- `parentage jsonb`
+
+## Server options
+
+Server options:
+- `base_url` (default `https://api.sustainalytics.com`)
+- `client_id` (**required**)
+- `client_secret` (**required**)
+
+
+## Build
 
 ```bash
-├── src
-│   └── lib.rs              # The package source code. We will implement the FDW logic, in this file.
-├── supabase-wrappers-wit   # The Wasm Interface Type provided by Supabase. See below for a detailed description.
-│   ├── http.wit
-│   ├── jwt.wit
-│   ├── routines.wit
-│   ├── stats.wit
-│   ├── time.wit
-│   ├── types.wit
-│   ├── utils.wit
-│   └── world.wit
-└── wit                     # The WIT interface this project will use to build the Wasm package.
-    └── world.wit
+cargo install cargo-component
+rustup target add wasm32-unknown-unknown
+cargo component build --release --target wasm32-unknown-unknown
 ```
 
-A [Wasm Interface Type](https://github.com/bytecodealliance/wit-bindgen) (WIT) defines the interfaces between the Wasm FDW (guest) and the Wasm runtime (host). For example, the `http.wit` defines the HTTP related types and functions can be used in the guest, and the `routines.wit` defines the functions the guest needs to implement.
+## Release
 
-## Getting started
-
-To get started, visit the [Wasm FDW developing guide](https://fdw.dev/guides/create-wasm-wrapper/).
-
-## License
-
-[Apache License Version 2.0](./LICENSE)
+This repo includes a GitHub Actions workflow that builds the WASM on tagged releases (`v*.*.*`) and
+creates a GitHub Release with the `.wasm` asset, printing the SHA256 in logs.

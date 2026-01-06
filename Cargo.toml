@@ -1,24 +1,19 @@
 [package]
-name = "wasm_fdw_example"
+name = "sustainalytics_wasm_fdw"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib"]
 
-[profile.release]
-strip = "debuginfo"
-lto = true
-
 [dependencies]
-wit-bindgen-rt = "0.26.0"
-serde_json = "1.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+urlencoding = "2"
+wrappers = "0.2"
 
-[package.metadata.component]
-package = "my-company:example-fdw"
-
-[package.metadata.component.target]
-path = "wit"
-
-[package.metadata.component.target.dependencies]
-"supabase:wrappers" = { path = "./supabase-wrappers-wit" }
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
