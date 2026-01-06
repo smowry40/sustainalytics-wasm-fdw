@@ -1,128 +1,57 @@
-name: Release
-
+name: Build and Release WASM
 
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+' # Push events to matching wasm fdw tag, i.e. v1.0.2
+      - "v*.*.*"
 
 permissions:
   contents: write
 
 jobs:
-  release:
-    name: Create Wasm FDW Release
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Rust
-        run: |
-          # install Rust
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain 1.81.0 && \
-            rustup --version && \
-            rustc --version && \
-            cargo --version
-
-          # add wasm32-unknown-unknown target
-          rustup target add wasm32-unknown-unknown
-
-          # install Wasm component
-          cargo install cargo-component --version 0.13.2
-
-          # install rustfmt for the toolchain
-          rustup component add rustfmt
-
-          # show all installed packagies
-          cargo install --list
-
-      - name: Build Wasm FDW
-        run: |
-          cargo component build --release --target wasm32-unknown-unknown
-
-      - name: Calculate Wasm file checksum
-        uses: jmgilman/actions-generate-checksum@v1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          method: sha256
-          output: checksum.txt
-          patterns: |
-            ./target/wasm32-unknown-unknown/release/*.wasm
+          targets: wasm32-unknown-unknown
 
-      - name: Get project metadata JSON
-        id: metadata
+      - name: Install cargo-component
+        run: cargo install cargo-component
+
+      - name: Build WASM component
+        run: cargo component build --release --target wasm32-unknown-unknown
+
+      - name: Locate WASM file
+        id: wasm
         run: |
-          METADATA_JSON=`cargo metadata --format-version 1 --no-deps --offline`
-          echo "METADATA_JSON=$METADATA_JSON" >> "$GITHUB_OUTPUT"
+          set -e
+          WASM_PATH=$(ls target/wasm32-unknown-unknown/release/*.wasm | head -n 1)
+          echo "wasm_path=$WASM_PATH" >> $GITHUB_OUTPUT
+          echo "WASM file found at: $WASM_PATH"
 
-      - name: Extract package info
-        id: extract
-        env:
-          TAG: ${{ github.ref_name }}
+      - name: Compute SHA256
+        id: sha
         run: |
-          PROJECT="${{ fromJson(steps.metadata.outputs.METADATA_JSON).packages[0].name }}"
-          PACKAGE="${{ fromJson(steps.metadata.outputs.METADATA_JSON).packages[0].metadata.component.package }}"
-          VERSION=`echo "${TAG}" | sed -E 's/v(.*)/\1/'`
-          CHECKSUM=`head -1 checksum.txt | sed -E 's/^(.*) .*/\1/'`
-          echo "PROJECT=$PROJECT" >> "$GITHUB_OUTPUT"
-          echo "PACKAGE=$PACKAGE" >> "$GITHUB_OUTPUT"
-          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "CHECKSUM=$CHECKSUM" >> "$GITHUB_OUTPUT"
+          set -e
+          SHA=$(sha256sum "${{ steps.wasm.outputs.wasm_path }}" | awk '{print $1}')
+          echo "sha256=$SHA" >> $GITHUB_OUTPUT
+          echo "SHA256: $SHA"
 
-      - name: Create README.txt
-        env:
-          PROJECT: ${{ steps.extract.outputs.PROJECT }}
-          PACKAGE: ${{ steps.extract.outputs.PACKAGE }}
-          VERSION: ${{ steps.extract.outputs.VERSION }}
-          CHECKSUM: ${{ steps.extract.outputs.CHECKSUM }}
-        run: |
-          cat > README.txt <<EOF
-          To use this Wasm foreign data wrapper on Supabase, create a foreign table like below,
-
-          create extension if not exists wrappers with schema extensions;
-
-          create foreign data wrapper wasm_wrapper
-            handler wasm_fdw_handler
-            validator wasm_fdw_validator;
-
-          create server example_server
-            foreign data wrapper wasm_wrapper
-            options (
-              fdw_package_url 'https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/${PROJECT}.wasm',
-              fdw_package_name '${PACKAGE}',
-              fdw_package_version '${VERSION}',
-              fdw_package_checksum '${CHECKSUM}',
-              api_url 'https://api.github.com'
-            );
-
-          create schema github;
-
-          create foreign table github.events (
-            id text,
-            type text,
-            actor jsonb,
-            repo jsonb,
-            payload jsonb,
-            public boolean,
-            created_at timestamp
-          )
-            server example_server
-            options (
-              object 'events',
-              rowid_column 'id'
-            );
-
-          For more details, please visit https://fdw.dev.
-          EOF
-
-      - name: Create release
-        id: create_release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
-          make_latest: true
           files: |
-            README.txt
-            checksum.txt
-            ./target/wasm32-unknown-unknown/release/*.wasm
+            ${{ steps.wasm.outputs.wasm_path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Print SHA256
+        run: |
+          echo "SHA256 checksum for Supabase:"
+          echo "${{ steps.sha.outputs.sha256 }}"
