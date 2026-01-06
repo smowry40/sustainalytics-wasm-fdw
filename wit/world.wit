@@ -1,5 +1,8 @@
-package meeder:sustainalytics-fdw
+package smowry:sustainalytics-fdw@0.1.0;
 
-world sustainalytics_fdw {
-  export supabase:wrappers/fdw@0.2.0
+world sustainalytics-fdw {
+  // TODO: add your exports here.
+  //
+  // Example:
+  // export run: func() -> string;
 }
