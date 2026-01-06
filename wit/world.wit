@@ -1,10 +1,5 @@
-package my-company:example-fdw@0.1.0;
+package meeder:sustainalytics-fdw
 
-world example {
-    import supabase:wrappers/http@0.1.0;
-    import supabase:wrappers/jwt@0.1.0;
-    import supabase:wrappers/stats@0.1.0;
-    import supabase:wrappers/time@0.1.0;
-    import supabase:wrappers/utils@0.1.0;
-    export supabase:wrappers/routines@0.1.0;
+world sustainalytics-fdw {
+  export supabase:wrappers/fdw@0.2.0
 }
