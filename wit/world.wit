@@ -1,5 +1,1 @@
-package meeder:sustainalytics-fdw
-
-world sustainalytics-fdw {
-  export supabase:wrappers/fdw@0.2.0
-}
+package meeder:sustainalytics-fdw { world sustainalytics-fdw { export supabase:wrappers/fdw@0.2.0 } }
