@@ -17,7 +17,7 @@
 use serde::Deserialize;
 use serde_json::Value as JsonValue;
 use urlencoding::encode;
-use wrappers::prelude::*;
+use supabase_wrappers::prelude::*;
 
 const DEFAULT_BASE_URL: &str = "https://api.sustainalytics.com";
 const DEFAULT_TAKE: i64 = 10;
@@ -285,7 +285,7 @@ impl SustainalyticsFdw {
 
 static INSTANCE: std::sync::Mutex<Option<SustainalyticsFdw>> = std::sync::Mutex::new(None);
 
-#[wrappers::fdw]
+#[supabase_wrappers::fdw]
 impl ForeignDataWrapper for SustainalyticsFdw {
     fn init(ctx: &Context) -> FdwResult<()> {
         let sopts = ctx.get_options(OptionsType::Server);
