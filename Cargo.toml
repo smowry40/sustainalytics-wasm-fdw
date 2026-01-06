@@ -17,3 +17,10 @@ opt-level = "z"
 lto = true
 codegen-units = 1
 strip = true
+
+[package.metadata.component]
+package = "smowry:sustainalytics-fdw"
+
+[package.metadata.component.target]
+path = "wit"
+world = "sustainalytics-fdw"
