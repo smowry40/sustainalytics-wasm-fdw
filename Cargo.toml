@@ -24,3 +24,65 @@ package = "smowry:sustainalytics-fdw"
 [package.metadata.component.target]
 path = "wit"
 world = "sustainalytics-fdw"
+
+[package.metadata.component.target.dependencies]
+"supabase:wrappers" = { path = "wit/deps/supabase-wrappers" }
+```
+
+4. Click **"Commit changes"**
+
+---
+
+## Step 5: Delete the old `supabase-wrappers-wit` folder
+
+You need to delete each file in that folder individually:
+
+1. Navigate to `supabase-wrappers-wit/http.wit`
+2. Click the **trash can icon**
+3. Click **"Commit changes"**
+4. Repeat for every file in `supabase-wrappers-wit/`:
+   - `jwt.wit`
+   - `routines.wit`
+   - `stats.wit`
+   - `time.wit`
+   - `types.wit`
+   - `utils.wit`
+   - `world.wit`
+
+(The folder will disappear automatically once all files are deleted)
+
+---
+
+## Step 6: Verify the GitHub Action runs
+
+1. Go to the **"Actions"** tab in your repository
+2. You should see a new workflow run triggered by your commits
+3. Click on it to watch the progress
+
+---
+
+## Summary of final file structure
+
+After completing all steps, your repository should look like:
+```
+.
+├── .github/workflows/release_wasm_fdw.yml
+├── .gitignore
+├── Cargo.toml
+├── LICENSE
+├── README.md
+├── local-dev.sh
+├── src/
+│   └── lib.rs
+└── wit/
+    ├── world.wit
+    └── deps/
+        └── supabase-wrappers/
+            ├── http.wit
+            ├── jwt.wit
+            ├── routines.wit
+            ├── stats.wit
+            ├── time.wit
+            ├── types.wit
+            ├── utils.wit
+            └── world.wit
