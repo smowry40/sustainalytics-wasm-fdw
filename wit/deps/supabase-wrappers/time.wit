@@ -1,0 +1,14 @@
+interface time {
+    type time-error = string;
+    type time-result = result<s64, time-error>;
+
+    epoch-secs: func() -> s64;
+
+    parse-from-rfc3339: func(s: string) -> time-result;
+
+    parse-from-str: func(s: string, fmt: string) -> time-result;
+
+    epoch-ms-to-rfc3339: func(msecs: s64) -> result<string, time-error>;
+
+    sleep: func(millis: u64);
+}
