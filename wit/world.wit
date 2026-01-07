@@ -1,4 +1,3 @@
 package smowry:sustainalytics-fdw@0.1.0;
 
-world sustainalytics-fdw {
-}
+include supabase:wrappers/wrappers@0.1.0;
